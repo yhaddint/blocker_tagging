@@ -6,6 +6,12 @@
 % 03/27/2014
 % PN sequences with characterize polynomial have been put into use
 
+% 04/11/2014
+% All noncancelling and cancelling terms are considered
+% Found there is '.^2' in sig_use, which was wrong. Fixed
+% Surprisingly enough, statistics of noncancelling terms is
+% gaussian now
+
 clear;clc;clf;close all
 warning off
 symbols=3e4;
@@ -42,7 +48,7 @@ for runtime=1:5
 
     %% distribution of signal_r^2*cal
     L=2e5;
-    sig_use=real(sig_bb(1:L,1)).^2;
+    sig_use=real(sig_bb(1:L,1));
     sig_power=mean(real(sig_bb(:,1)).^2);
     cal=PNgenerator_v1(L);
     sig_pn=sig_use.*cal;
@@ -53,7 +59,7 @@ for runtime=1:5
         clc
         display(['Run number',num2str(runtime)]);
         display(['N = ',num2str(Npool(nn)) ', M = ',num2str(Mpool(mm))]);
-    clear rslt_cancel rslt_noncancel ii i
+    clear rslt_cancel rslt_noncancel rslt_PN ii i
     
     N=Npool(nn);
     M=Mpool(mm);
@@ -61,9 +67,10 @@ for runtime=1:5
     for ii=1:fix(L/N/2)
         rslt_cancel(ii)=mean(sig_pn((ii-1)*N+1:ii*N));
         rslt_noncancel(ii)=mean(sig_use((ii-1)*N+1:ii*N));
+        rslt_PN(ii)=mean(cal((ii-1)*N+1:ii*N));
     end
-    rslt3=abs(rslt_cancel+rslt_noncancel);
-    %rslt3=rslt_cancel;
+    %rslt3=abs(rslt_cancel+rslt_noncancel+rslt_PN);
+    rslt3=rslt_noncancel;
     
     l_need=fix(length(rslt3)/M);
     if M==1
@@ -117,7 +124,7 @@ for runtime=1:5
     end
     end
 end
-%%
+%% surf of GOF
 for nn=1:length(Npool)
     for mm=1:length(Mpool)
         temp=squeeze(rslt_matrix(nn,mm,:));
@@ -128,3 +135,11 @@ for nn=1:length(Npool)
 end
 rslt_hist
 surf(Mpool,Npool,rslt_hist);
+
+%% hist of noncancelling term
+figure
+for ii=1:4
+subplot(2,2,ii)
+hist(squeeze(rslt_matrix(ii,1,:)))
+title(['N=',num2str(Npool(ii))]);
+end
