@@ -10,82 +10,121 @@ clear;clc;clf;close all
 warning off
 symbols=3e4;
 upsam=8;
-for jj=1:10
+Npool=[20 40 60 80];
+Mpool=[1 2 4 8 12 16];
+% Npool=[100];
+% Mpool=[4];
 
-for i=1:3
-clear data
-hmod = modem.pskmod('M', 4, 'InputType', 'integer');
-hdesign  = fdesign.pulseshaping(upsam,'Square Root Raised Cosine');
-hpulse = design(hdesign);
-data = randi(4,symbols,1)-1;
-data = modulate(hmod, data);
-data = upsample(data,upsam);
-data = conv(data,hpulse.Numerator);
 
-sig_bb(:,i)=data;
-sig_bb(:,i)=sig_bb(:,i)/(sqrt(mean(abs(sig_bb(:,i)).^2)));
+needmoredata=1;
+height=2e3;
+rslt_matrix=zeros(length(Npool),length(Mpool),height);
+mark=zeros(length(Npool),length(Mpool));
+
+for runtime=1:5  
+    for i=1:1
+    clear data
+    hmod = modem.pskmod('M', 4, 'InputType', 'integer');
+    hdesign  = fdesign.pulseshaping(upsam,'Square Root Raised Cosine');
+    hpulse = design(hdesign);
+    data = randi(4,symbols,1)-1;
+    data = modulate(hmod, data);
+    data = upsample(data,upsam);
+    data = conv(data,hpulse.Numerator);
+
+    sig_bb(:,i)=data;
+    sig_bb(:,i)=sig_bb(:,i)/(sqrt(mean(abs(sig_bb(:,i)).^2)));
+    end
+
+
+
+
+
+    %% distribution of signal_r^2*cal
+    L=2e5;
+    sig_use=real(sig_bb(1:L,1)).^2;
+    sig_power=mean(real(sig_bb(:,1)).^2);
+    cal=PNgenerator_v1(L);
+    sig_pn=sig_use.*cal;
+    
+    
+    for nn=1:length(Npool)
+    for mm=1:length(Mpool)
+        clc
+        display(['Run number',num2str(runtime)]);
+        display(['N = ',num2str(Npool(nn)) ', M = ',num2str(Mpool(mm))]);
+    clear rslt_cancel rslt_noncancel ii i
+    
+    N=Npool(nn);
+    M=Mpool(mm);
+
+    for ii=1:fix(L/N/2)
+        rslt_cancel(ii)=mean(sig_pn((ii-1)*N+1:ii*N));
+        rslt_noncancel(ii)=mean(sig_use((ii-1)*N+1:ii*N));
+    end
+    rslt3=abs(rslt_cancel+rslt_noncancel);
+    %rslt3=rslt_cancel;
+    
+    l_need=fix(length(rslt3)/M);
+    if M==1
+        temp=rslt3;
+    else
+        temp=mean(reshape(rslt3(1:M*l_need),M,l_need));
+    end
+    
+    
+    if mark(nn,mm)<height
+    % it means we should update new data into it
+        if mark(nn,mm)+length(temp)<=height
+            rslt_matrix(nn,mm,mark(nn,mm)+1:mark(nn,mm)+length(temp))=temp;
+            mark(nn,mm)=mark(nn,mm)+length(temp);
+        else
+            rslt_matrix(nn,mm,mark(nn,mm)+1:height)=temp(1:height-mark(nn,mm));
+            mark(nn,mm)=height;
+        end
+    end
+    %%
+
+    % figure
+    % hist(rslt2,20)
+    % title('sequencially pick')
+
+
+    %%
+    % clear ii
+    % for ii=1:fix(N/M)
+    %     rslt4(ii)=mean(cal((ii-1)*M+1:ii*M).^3);
+    % end
+
+    % %% sequencially pick illustration
+    % figure
+    % plot(real(sig_bb(1:500,1)),'c','linewidth',2);
+    % hold
+    % plot(100:150,real(sig_bb(100:150,1)),'kx');
+    % grid
+    % 
+    % 
+    % %% randomly pick illustration
+    % index=randi(500,1,50);
+    % figure
+    % plot(real(sig_bb(1:500,1)),'c','linewidth',2);
+    % hold
+    % plot(sort(index),real(sig_bb(sort(index))),'kx');
+    % grid
+
+
+    %[H,gaussfit(mm,nn,:)]=chi2gof(rslt_matrix(mm,nn,:));
+    end
+    end
 end
-
-
-
-
-
-%% distribution of signal_r^2*cal
-N=4e4;
-M=30;
-clear ii i
-sig_use=real(sig_bb(1:N,1)).^2;
-sig_power=mean(real(sig_bb(:,1)).^2);
-cal=PNgenerator_v1(N);
-sig_pn=sig_use.*cal;
-
-% % simulate "uniformly random starting point"
-% for ii=1:N-M
-%     rslt1(ii)=mean(sig_pn(ii:ii+M-1));
-% end
-
-% simulate "sequencially starting point"
-for ii=1:fix(N/M/2)
-    rslt2(ii)=mean(sig_pn((ii-1)*M+1:ii*M));
-end
-
-
-% for ii=1:2000
-%     rslt3(ii)=mean(sig_pn(randi(5000,50,1)));
-% end
 %%
-% figure
-% hist(rslt1,20)
-% title('sequencially pick')
-% figure
-% hist(rslt2,20)
-% title('sequencially pick')
-% figure
-% hist(rslt3,20)
-% title('randomly pick')
-
-%%
-% clear ii
-% for ii=1:fix(N/M)
-%     rslt4(ii)=mean(cal((ii-1)*M+1:ii*M).^3);
-% end
-
-% %% sequencially pick illustration
-% figure
-% plot(real(sig_bb(1:500,1)),'c','linewidth',2);
-% hold
-% plot(100:150,real(sig_bb(100:150,1)),'kx');
-% grid
-% 
-% 
-% %% randomly pick illustration
-% index=randi(500,1,50);
-% figure
-% plot(real(sig_bb(1:500,1)),'c','linewidth',2);
-% hold
-% plot(sort(index),real(sig_bb(sort(index))),'kx');
-% grid
-
-[H,gaussfit(jj)]=chi2gof(rslt2);
+for nn=1:length(Npool)
+    for mm=1:length(Mpool)
+        temp=squeeze(rslt_matrix(nn,mm,:));
+        G_mean(nn,mm)=mean(temp(find(temp)));
+        G_var(nn,mm)=mean(temp(find(temp)).^2);
+        [H rslt_hist(nn,mm)]=chi2gof(temp(find(temp)));
+    end
 end
-plot(50,gaussfit,'x')
+rslt_hist
+surf(Mpool,Npool,rslt_hist);
