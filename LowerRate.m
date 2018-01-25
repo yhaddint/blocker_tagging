@@ -1,4 +1,4 @@
-function [ cal ] = LowerRate_v1( cal0,Dsampling,L )
+function [ cal ] = LowerRate( cal0,Dsampling,L )
 %LOWERRATE_V1 Summary of this function goes here
 %   Detailed explanation goes here
 blocker_num=length(cal0(1,:));
