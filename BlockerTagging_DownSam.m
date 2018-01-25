@@ -1,11 +1,8 @@
 %
 %  07/29/2014
-%  We still use fancy 500MSample/s ADC to do the sampling, however, after
-%  that we try to decimal them to decrease signal processing complexity.
-
-%  However, there is a critical problem, PN sequences have bandwidth
-%  ridiculesly large. We have to solve this problem in the next version
-
+%  We assume ADC works in 500MSamples/s and PN sequences have bandiwdth of
+%  5MHz. We are dealing with blockers with BW less than 500KHz because
+%  otherwise 1FFT 
 
 
 clear;clc;clf;close all
@@ -17,12 +14,11 @@ checkPN=0;
 plot_stat=0;
 runtimes=50;
 
-upsam=500;
+upsam=20;
 
-Dsampling=8;
 figindex=99;
 
-N=400;
+N=20;
 M=30;
 
 %  tune power of each blockers
@@ -42,7 +38,7 @@ symbols=L*2/upsam;
 
 
 %  Blocker envelop
-for ii=1:blocker_num*1.5
+for ii=1:blocker_num*2
     clear data
     hmod = modem.pskmod('M', 4, 'InputType', 'integer');
     hdesign  = fdesign.pulseshaping(upsam,'Square Root Raised Cosine');
@@ -54,39 +50,37 @@ for ii=1:blocker_num*1.5
 end
 
 %  Normalization of Power
-blocker(:,1)=real(sig_bb(1:L,1))./sqrt(mean(real(sig_bb(1:L,1)).^2))*blocker_pow_pool(1);
+blocker(:,1)=real(sig_bb(end-L+1:end,1))./sqrt(mean(real(sig_bb(end-L+1:end,1)).^2))*blocker_pow_pool(1);
 
 
-cal0_temp=PNgenerator_v3(110);
-cal0=zeros(N/Dsampling,blocker_num);
+cal0_temp=PNgenerator_v4(110);
+cal0=zeros(N,blocker_num);
 for ii=1:blocker_num
-cal0(:,ii)=cal0_temp(ii:N/Dsampling-1+ii);
+cal0(:,ii)=cal0_temp(ii:N-1+ii);
 end
 % Equivalently lower rate of PN signal
-cal=LowerRate_v1(cal0,Dsampling,L);
+cal=LowerRate_v2(cal0,L);
 
 %% Check PN Cross-Correlation
 if checkPN
     corrMat=zeros(blocker_num,blocker_num);
     for ii=1:blocker_num
         for jj=ii:blocker_num
-            corrMat(ii,jj)=sum(cal0(1:N/Dsampling,ii).*cal0(1:N/Dsampling,jj));
+            corrMat(ii,jj)=sum(cal0(:,ii).*cal0(:,jj));
         end
     end
     corrMat
 end
 
 %% down sample
-cal=downsample(cal,Dsampling);
-blocker=downsample(blocker,Dsampling);
-Ndown=N/Dsampling;
+Ndown=N;
 %% standard
 %  We define Blocker with certain power, let's say 10, as standard.
 %  It can be regarded as training signal to determine TH 
 
 standard_raw=0.5*blocker(:,1).^2+blocker(:,1).*cal(:,1);
 standard_MNsorted=tagging_v1(standard_raw,cal(:,1),Ndown,M);
-TH=standard_MNsorted(0.1*length(standard_MNsorted))*4;
+TH=standard_MNsorted(0.1*length(standard_MNsorted))*2.5;
  
 %% parallel PN correlation and averaging
 achive=zeros(blocker_num,runtimes);
@@ -105,8 +99,8 @@ blocker_pow_pool(:,10)=0.01/100;
 
 %  QPSK Blocker generator with power scaled
 for ii=1:blocker_num
-    tempindex=randi(15);
-    blocker(:,ii)=downsample(real(sig_bb(1:L,tempindex))./sqrt(mean(real(sig_bb(1:L,tempindex)).^2))*blocker_pow_pool(ii),Dsampling);
+    tempindex=randi(20);
+    blocker(:,ii)=real(sig_bb(end-L+1:end,tempindex))./sqrt(mean(real(sig_bb(end-L+1:end,tempindex)).^2))*blocker_pow_pool(ii);
 end
 
 %  calculate statistics (including intermediate)
