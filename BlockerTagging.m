@@ -1,22 +1,7 @@
 
-% 04/24/2014
-% Right now the performance of blocker tagging is clear by last time's
-% simulation. However, detection of signal with large power is trivial if
-% we didn't exploit other practical issue, i.e. neighbour interference.
-
-% In the very first simulation, I put triple blockers, but results may be
-% flawed by incorrect QPSK and PN sequences generator. Here I am doing it
-% again.
-
-% Although I have theoretically analyzed what kind of R.V. the detection
-% statistic might be, I don't think it will be the Gaussian Detection
-% case. I may just abandon them.
-
-% I also plan to add "blocker power estmation" in this version. It is based
-% on the fact that larger blocker power leads to larger nonconcanlling
-% terms. So we have a good reason to claim we know something about its
-% power once we got the detection statistics, though better statistics may
-% appear in the future.
+% 04/25/2014
+% Keep M=1 and tune N from small to infinite to see whether statistic will
+% approach blocker power. Use different blocker power to watch clearly.
 
 
 clear;clc;clf;close all
@@ -26,7 +11,7 @@ symbols=5e4;
 upsam=8;
 
 % tune parameter M, N and relative power of blockers v.s. PN sequences
-Npool=[5 10 20 40];
+Npool=[5 10 20 40 80 160 320 640 1280];
 Mpool=[1 2 4 8];
 sig_pow_pool=[1 2 4 8 16];
 noisepower=0;
@@ -38,7 +23,16 @@ do_det=0;
 % number of data accumulated to watch histogram.
 height=5e3;
 
-for runtime=1
+% initialization of data store matrix for M, N pair
+rslt_matrix_h0=zeros(length(Npool),length(sig_pow_pool),height);
+rslt_matrix_h1=zeros(length(Npool),length(sig_pow_pool),height);
+
+mark=zeros(length(Npool),length(sig_pow_pool));   
+
+
+for sig_pow_index=1:length(sig_pow_pool)
+
+for runtime=1:1
     for i=1:1
     clear data
     hmod = modem.pskmod('M', 4, 'InputType', 'integer');
@@ -60,9 +54,7 @@ for runtime=1
     cal=PNgenerator_v1(L);
     noise_0=randn(1,L)*noisepower;
     noise_1=randn(1,L)*noisepower;
-    
-    for sig_pow_index=1:length(sig_pow_pool)
-    
+
     sig_pow=sig_pow_pool(sig_pow_index);
     sig_use=sig_normal*sig_pow;
     
@@ -71,15 +63,10 @@ for runtime=1
     
     stat_h0=0.5*(cal+sig_h0.^2.*cal)+sig_h0;
     stat_h1=0.5*(cal+sig_h1.^2.*cal)+sig_h1;
-    
-    % initialization of data store matrix for M, N pair
-    rslt_matrix_h0=zeros(length(Npool),length(Mpool),height);
-    rslt_matrix_h1=zeros(length(Npool),length(Mpool),height);
 
-    mark=zeros(length(Npool),length(Mpool));
     
-    for nn=2%:length(Npool)
-    for mm=4%:length(Mpool)
+    for nn=1:length(Npool)
+    for mm=1%:length(Mpool)
         clc
         display(['Run number',num2str(runtime)]);
         display(['Blockers vs PN',num2str(sig_pow)]);
@@ -105,20 +92,18 @@ for runtime=1
     end
     
     
-    if mark(nn,mm)<height
+    if mark(nn,sig_pow_index)<height
     % it means we should update new data into it
-        if mark(nn,mm)+length(temp_h0)<=height
-            rslt_matrix_h0(nn,mm,mark(nn,mm)+1:mark(nn,mm)+length(temp_h0))=temp_h0;
-            rslt_matrix_h1(nn,mm,mark(nn,mm)+1:mark(nn,mm)+length(temp_h1))=temp_h1;
-            mark(nn,mm)=mark(nn,mm)+length(temp_h0);
+        if mark(nn,sig_pow_index)+length(temp_h0)<=height
+            rslt_matrix_h0(nn,sig_pow_index,mark(nn,sig_pow_index)+1:mark(nn,sig_pow_index)+length(temp_h0))=temp_h0;
+            rslt_matrix_h1(nn,sig_pow_index,mark(nn,sig_pow_index)+1:mark(nn,sig_pow_index)+length(temp_h1))=temp_h1;
+            mark(nn,sig_pow_index)=mark(nn,sig_pow_index)+length(temp_h0);
         else
-            rslt_matrix_h0(nn,mm,mark(nn,mm)+1:height)=temp_h0(1:height-mark(nn,mm));
-            rslt_matrix_h1(nn,mm,mark(nn,mm)+1:height)=temp_h1(1:height-mark(nn,mm));
-            mark(nn,mm)=height;
+            rslt_matrix_h0(nn,sig_pow_index,mark(nn,sig_pow_index)+1:height)=temp_h0(1:height-mark(nn,sig_pow_index));
+            rslt_matrix_h1(nn,sig_pow_index,mark(nn,sig_pow_index)+1:height)=temp_h1(1:height-mark(nn,sig_pow_index));
+            mark(nn,sig_pow_index)=height;
         end
     end
-pow_temp=squeeze(rslt_matrix_h1(nn,mm,:));
-observ(sig_pow_index,:)=pow_temp(pow_temp>0);
     % figure
     % hist(rslt2,20)
     % title('sequencially pick')
@@ -150,8 +135,13 @@ observ(sig_pow_index,:)=pow_temp(pow_temp>0);
     %[H,gaussfit(mm,nn,:)]=chi2gof(rslt_matrix(mm,nn,:));
     end
     end
+end
+    % Before next signal power, accumulate needed data
+    for nn=1:length(Npool)
+        h1_stat_mean(sig_pow_index,nn)=mean(squeeze(rslt_matrix_h1(nn,sig_pow_index,:)));
     end
 end
+
 %% detection and plot
 % use do_det to control this section
 if do_det
@@ -211,12 +201,23 @@ end
 
 %% estimation of blocker power
 if do_est
-    figure
+    AP=1;
+    color=['b-o';'r-o';'c-o';'k-o';'m-o'];
+    color_AP=['b--';'r--';'c--';'k--';'m--'];
+    figure(99)
     for sig_pow_index=1:length(sig_pow_pool)
-        subplot(length(sig_pow_pool),1,sig_pow_index)
-        hist(observ(sig_pow_index,:),20);hold on
-        set(gca,'xlim',[0 100])
-        title(['M = ',num2str(M),'  N = ',num2str(N),'  S/PN = ',num2str(sig_pow_pool(sig_pow_index))]);
+        semilogy(Npool,h1_stat_mean(sig_pow_index,:),color(sig_pow_index,:),'linewidth',2);
+        hold on
+    end
+    grid on
+    legend('S/PN = 0dB','S/PN = 3dB','S/PN = 6dB','S/PN = 9dB','S/PN = 12dB')
+    xlabel('N')
+    ylabel('statistic value')
+    if AP
+        figure(99)
+        for sig_pow_index=1:length(sig_pow_pool)
+            semilogy(Npool,ones(1,length(Npool))*sig_pow_pool(sig_pow_index),color_AP(sig_pow_index,:),'linewidth',2);
+            hold on
+        end
     end
 end
-
