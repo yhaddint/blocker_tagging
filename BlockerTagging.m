@@ -1,29 +1,42 @@
 
-% 04/18/2014
-% Different m and n are swept to watch detection performance only single blocker is considered, and thus results could be trivial noise is neglected here since compared with 0 dBm blocker and several dB weaker PN signal, noise floor is too weak.
+% 04/24/2014
+% Right now the performance of blocker tagging is clear by last time's
+% simulation. However, detection of signal with large power is trivial if
+% we didn't exploit other practical issue, i.e. neighbour interference.
 
-% 04/25/2014 
-% Since larger Blocker/PN ratio leads to better performance, why not lower PN power to noise floor? 
+% In the very first simulation, I put triple blockers, but results may be
+% flawed by incorrect QPSK and PN sequences generator. Here I am doing it
+% again.
+
+% Although I have theoretically analyzed what kind of R.V. the detection
+% statistic might be, I don't think it will be the Gaussian Detection
+% case. I may just abandon them.
+
+% I also plan to add "blocker power estmation" in this version. It is based
+% on the fact that larger blocker power leads to larger nonconcanlling
+% terms. So we have a good reason to claim we know something about its
+% power once we got the detection statistics, though better statistics may
+% appear in the future.
+
 
 clear;clc;clf;close all
 warning off
+
 symbols=5e4;
 upsam=8;
+
+% tune parameter M, N and relative power of blockers v.s. PN sequences
 Npool=[5 10 20 40];
 Mpool=[1 2 4 8];
-% Npool=[100];
-% Mpool=[4];
+sig_pow_pool=[1 2 4 8 16];
+noisepower=0;
 
-noisepower=1;
-sig_pow=100;
+% determined whether to apply estimation of power and detection
+do_est=1;
+do_det=0;
 
-needmoredata=1;
+% number of data accumulated to watch histogram.
 height=5e3;
-
-rslt_matrix_h0=zeros(length(Npool),length(Mpool),height);
-rslt_matrix_h1=zeros(length(Npool),length(Mpool),height);
-
-mark=zeros(length(Npool),length(Mpool));
 
 for runtime=1
     for i=1:1
@@ -44,11 +57,14 @@ for runtime=1
     %% signal processing
     L=4e5;
     sig_normal=real(sig_bb(1:L,1))./mean(real(sig_bb(:,1)).^2);
-    sig_use=sig_normal*sig_pow;
     cal=PNgenerator_v1(L);
-    
     noise_0=randn(1,L)*noisepower;
     noise_1=randn(1,L)*noisepower;
+    
+    for sig_pow_index=1:length(sig_pow_pool)
+    
+    sig_pow=sig_pow_pool(sig_pow_index);
+    sig_use=sig_normal*sig_pow;
     
     sig_h0=noise_0';
     sig_h1=sig_use+noise_1';
@@ -56,10 +72,17 @@ for runtime=1
     stat_h0=0.5*(cal+sig_h0.^2.*cal)+sig_h0;
     stat_h1=0.5*(cal+sig_h1.^2.*cal)+sig_h1;
     
-    for nn=1:length(Npool)
-    for mm=1:length(Mpool)
+    % initialization of data store matrix for M, N pair
+    rslt_matrix_h0=zeros(length(Npool),length(Mpool),height);
+    rslt_matrix_h1=zeros(length(Npool),length(Mpool),height);
+
+    mark=zeros(length(Npool),length(Mpool));
+    
+    for nn=2%:length(Npool)
+    for mm=4%:length(Mpool)
         clc
         display(['Run number',num2str(runtime)]);
+        display(['Blockers vs PN',num2str(sig_pow)]);
         display(['N = ',num2str(Npool(nn)) ', M = ',num2str(Mpool(mm))]);
     clear rslt_cancel rslt_noncancel rslt_PN ii i
     
@@ -94,8 +117,8 @@ for runtime=1
             mark(nn,mm)=height;
         end
     end
-    
-
+pow_temp=squeeze(rslt_matrix_h1(nn,mm,:));
+observ(sig_pow_index,:)=pow_temp(pow_temp>0);
     % figure
     % hist(rslt2,20)
     % title('sequencially pick')
@@ -127,10 +150,13 @@ for runtime=1
     %[H,gaussfit(mm,nn,:)]=chi2gof(rslt_matrix(mm,nn,:));
     end
     end
+    end
 end
-%% plot
+%% detection and plot
+% use do_det to control this section
+if do_det
 color=['b  ';'r  ';'c  ';'k  ';'r--';'c--'];
-th_pool=0:0.1:50;
+th_pool=0:0.01:5;
 for nn=1:length(Npool)
     subplot(2,2,nn)
     for mm=1:length(Mpool)
@@ -172,7 +198,8 @@ grid on
 % hist(squeeze(rslt_matrix(ii,1,:)))
 % title(['N=',num2str(Npool(ii))]);
 % end
-%% plot hist of h0
+
+% plot hist of h0
 figure;
 for mm=1:4
 subplot(2,2,mm);
@@ -180,4 +207,16 @@ hist(squeeze(rslt_matrix_h0(mm,1,:)),10);
 title(['N = 5, M=' num2str(Mpool(mm))]);
 end
 
+end
+
+%% estimation of blocker power
+if do_est
+    figure
+    for sig_pow_index=1:length(sig_pow_pool)
+        subplot(length(sig_pow_pool),1,sig_pow_index)
+        hist(observ(sig_pow_index,:),20);hold on
+        set(gca,'xlim',[0 100])
+        title(['M = ',num2str(M),'  N = ',num2str(N),'  S/PN = ',num2str(sig_pow_pool(sig_pow_index))]);
+    end
+end
 
