@@ -1,4 +1,4 @@
-function [ sig_MNave ] = tagging_v2( sig,cal,N,M )
+function [ sig_MNave ] = correlation_and_abs( sig,cal,N,M )
 
 %  version 3 is energy detection while version 2 is absolute value
 %  detection
