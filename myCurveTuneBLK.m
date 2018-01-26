@@ -1,5 +1,7 @@
 %  09/02/2014
-%  Tune BLK BW.
+%  Tune CAL BW. BLK BW is set to be 1MHz
+%  Different sampling time.
+
 
 clear;clc
 figIndex=99;
@@ -7,16 +9,15 @@ figIndex=99;
 %  to compare fairly, we downsample to 5samples/cal period
 downSampleTo=5;
 
-% BW of blocker is tuned by BW_blk_pool?
-BW_blk_pool=[1 0.25 4];
+% BW of blocker is a constant (1MHz)
+BW_blk_pool=1;
 
 % We change BW of calibration signals by chaning oversample rate
-oversamp=10;
+oversamp=[5 10 30];
 fs=300;
-BW_cal=fs/oversamp;
 
 % Averaging length N and Samples to do such Averaging
-N=15;
+N=31;
 SampleNumberAve=N*downSampleTo;
 
 %% LPF
@@ -54,7 +55,7 @@ for ii=1:N
     cal0(:,ii)=[cal0_temp(ii:end);cal0_temp(1:ii-1)];
 end
 
-hdesign  = fdesign.pulseshaping(N*oversamp,'Square Root Raised Cosine');
+hdesign  = fdesign.pulseshaping(SampleNumberAve,'Square Root Raised Cosine');
 hpulse = design(hdesign);
 c=(length(hpulse.Numerator)+1)/2;
 % hindex=zeros(7,oversamp);
@@ -96,15 +97,19 @@ for ii=1:N
     Cmatrix(:,:,1)=Cmatrix(:,:,1)+(cal(:,ii)*cal(:,ii)').*(cal(:,ii)*cal(:,ii)')/N;
 end
 
-%% supression
+%%
+for kk=1:length(oversamp)
+BW_cal=fs/oversamp(kk);
+
+% supression
 %  1 Neighbor Suppression without LPF
 %  2 Interference Suppression without LPF
 %  3 Neighbor Suppression with LPF
 %  4 Interference Suppression with LPF
 
 %
-for kk=1:length(BW_blk_pool)
-upsam=fs/BW_blk_pool(kk)/(oversamp/downSampleTo);
+
+upsam=fs/BW_blk_pool/(oversamp(kk)/downSampleTo);
 
 hdesign  = fdesign.pulseshaping(fix(upsam),'Square Root Raised Cosine');
 hpulse = design(hdesign);
@@ -119,17 +124,26 @@ plotxNumber=30;
 plotxLim=30;
 
 df=linspace(0,plotxLim,plotxNumber);
+
+for ii=1:SampleNumberAve
+    for jj=1:SampleNumberAve
+        Rb(ii,jj)=h(1+abs(ii-jj));
+    end
+end
+
+power_benchmark=sum(sum(Rb));
+
 for findex=1:plotxNumber
-    cosCorr=cos(2*pi*df(findex)/fs*(oversamp/downSampleTo)*(0:SampleNumberAve-1));
+    cosCorr=cos(2*pi*df(findex)/fs*(oversamp(kk)/downSampleTo)*(0:SampleNumberAve-1));
     for ii=1:SampleNumberAve
         for jj=1:SampleNumberAve
             Rc(ii,jj)=cosCorr(abs(ii-jj)+1);
             Rb(ii,jj)=h(1+abs(ii-jj));
         end
     end
-    if kk==1
-        power_benchmark=sum(sum(Rb));
-    end
+
+
+
     for suppressionChoice=1:4
         result(findex,kk,suppressionChoice)=trace((Rc.*Rb)*Cmatrix(:,:,suppressionChoice))/power_benchmark;   
     end
@@ -138,9 +152,9 @@ end
 
 
 %% plot
-color=['r  ';'c  ';'m  ';'b-o';'r-o';'g-o'];
+color=['b  ';'r  ';'g  ';'b-o';'r-o';'g-o'];
 for suppressionChoice=1:4
-for kk=1:length(BW_blk_pool)
+for kk=1:length(oversamp)
     
     plotx=[-fliplr(df) df(2:end)];
     ploty=10*log10(result(:,kk,suppressionChoice))';
@@ -152,7 +166,7 @@ for kk=1:length(BW_blk_pool)
     
 end
 figure(figIndex)
-legend('BLK BW = 1MHz','BLK BW = 250KHz','BLK BW = 4MHz');
+legend('CAL BW = 60MHz','CAL BW = 30MHz','CAL BW =	10MHz');
 ylim([-40,10]);  
 xlabel('Distance to Center (MHz)');
 ylabel('Suppression (dB)');
