@@ -57,8 +57,8 @@ for ii=1:BLKcan_num
 end
 
 %% calibration sequences
-cal0=PNgenerator_v5(N,N,downSampleTo);
-CAL=LowerRate_v2(cal0,P);
+cal0=PN_generator_downsample(N,N,downSampleTo);
+CAL=LowerRate(cal0, 1, P);
 
 
 %%
@@ -105,9 +105,9 @@ for runindex=1:runtimes
 %         h1_power(runindex)=tagging_v3(storedbb_h1,CAL(:,1),SampleNumberAve,1);
 % 
 %     
-        sig_MNave_BLK(runindex)=tagging_v3(BLK(:,1).*CAL(:,1)*BLK_amp_pool(1,runindex),CAL(:,1),SampleNumberAve,M);
-        sig_MNave_h0(runindex)=tagging_v3(storedbb_h0,CAL(:,1),SampleNumberAve,M);
-        sig_MNave_h1(runindex)=tagging_v3(storedbb_h1,CAL(:,1),SampleNumberAve,M);
+        sig_MNave_BLK(runindex)=correlation_and_pow(BLK(:,1).*CAL(:,1)*BLK_amp_pool(1,runindex),CAL(:,1),SampleNumberAve,M);
+        sig_MNave_h0(runindex)=correlation_and_pow(storedbb_h0,CAL(:,1),SampleNumberAve,M);
+        sig_MNave_h1(runindex)=correlation_and_pow(storedbb_h1,CAL(:,1),SampleNumberAve,M);
 
 
 end
