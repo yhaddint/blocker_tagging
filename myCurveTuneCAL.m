@@ -3,26 +3,28 @@
 %  Different sampling time.
 
 
-clear;clc
-figIndex=99;
-
-%  to compare fairly, we downsample to 5samples/cal period
-downSampleTo=5;
+clear;clc;clf;close all
+warning('off')
 
 % BW of blocker is a constant (1MHz)
 BW_blk_pool=1;
 
 % We change BW of calibration signals by chaning oversample rate
-oversamp=[5 10 30];
-fs=300;
+cal_BW=[30 15 60];
+fs=360;
+downSampleTo=fs/cal_BW(3);
 
 % Averaging length N and Samples to do such Averaging
-N=31;
+N=63;
 SampleNumberAve=N*downSampleTo;
 
+for kk=1:3
+clearvars -except result cal_BW fs downSampleTo N SampleNumberAve kk power_benchmark    
+    
 %% LPF
+cutoff=cal_BW(kk)/fs;
 % How far a Cutoff is from BW of Calibration.
-d=fdesign.lowpass('Fp,Fst,Ap,Ast',1/downSampleTo,1.25/downSampleTo,1,60);
+d=fdesign.lowpass('Fp,Fst,Ap,Ast',cutoff,1.25*cutoff,1,60);
 Hd = design(d,'equiripple');
 ll=(length(Hd.Numerator)+1)/2;
 
@@ -49,9 +51,17 @@ Lmatrix=Lmatrix_full(ll:end-ll+1,:);
 
 
 %% cal
-cal0_temp=PN_generator(N);
-cal0=zeros(N,N);
-for ii=1:N
+if kk==1
+    blk_num=31;
+elseif kk==2
+    blk_num=15;
+else
+    blk_num=63;
+end
+
+cal0_temp=PN_generator(blk_num);
+cal0=zeros(blk_num,blk_num);
+for ii=1:blk_num
     cal0(:,ii)=[cal0_temp(ii:end);cal0_temp(1:ii-1)];
 end
 
@@ -63,9 +73,11 @@ c=(length(hpulse.Numerator)+1)/2;
 %     hindex(:,kk)=((kk-1)*N+(c-3*N*oversamp:N*oversamp:c+3*N*oversamp))';
 % end
 
-cal=zeros(SampleNumberAve,N);
-for ii=1:N
-    cal(:,ii)=kron(cal0(:,ii),ones(downSampleTo,1));
+cal=zeros(SampleNumberAve,blk_num);
+for ii=1:blk_num
+    temp=kron(cal0(:,ii),ones(downSampleTo*cal_BW(3)/cal_BW(kk),1));
+    cal(:,ii)=[temp;temp(1:SampleNumberAve-length(temp))];
+    clearvars temp
 end
 
 % tempmat=zeros(N,oversamp);
@@ -76,17 +88,17 @@ end
 %     end
 %     cal_ni(:,ii)=reshape(tempmat',N*oversamp,1);
 % end
-clearvars temp
+
 
 Cmatrix=zeros(SampleNumberAve,SampleNumberAve,4);
 % 1. Neighbor without LPF
 % Cmatrix(:,:,1)=ones(N*oversamp,N*oversamp);
 
 % We want to consider averaging effect over ensemble of calibration
-aveCalNum=(N-1)*N/2;
+aveCalNum=(blk_num-1)*blk_num/2;
 
-for ii=1:N
-    for jj=ii+1:N
+for ii=1:blk_num
+    for jj=ii+1:blk_num
         % 2. Interference without LPF
         Cmatrix(:,:,2)=Cmatrix(:,:,2)+(cal(:,ii)*cal(:,ii)').*(cal(:,jj)*cal(:,jj)')/aveCalNum;
         % 4. Interference with LPF
@@ -97,9 +109,6 @@ for ii=1:N
     Cmatrix(:,:,1)=Cmatrix(:,:,1)+(cal(:,ii)*cal(:,ii)').*(cal(:,ii)*cal(:,ii)')/N;
 end
 
-%%
-for kk=1:length(oversamp)
-BW_cal=fs/oversamp(kk);
 
 % supression
 %  1 Neighbor Suppression without LPF
@@ -109,7 +118,7 @@ BW_cal=fs/oversamp(kk);
 
 %
 
-upsam=fs/BW_blk_pool/(oversamp(kk)/downSampleTo);
+upsam=fs*cal_BW(kk)/cal_BW(3);
 
 hdesign  = fdesign.pulseshaping(fix(upsam),'Square Root Raised Cosine');
 hpulse = design(hdesign);
@@ -131,42 +140,44 @@ for ii=1:SampleNumberAve
     end
 end
 
+if kk==1
 power_benchmark=sum(sum(Rb));
+end
 
-for findex=1:plotxNumber
-    cosCorr=cos(2*pi*df(findex)/fs*(oversamp(kk)/downSampleTo)*(0:SampleNumberAve-1));
-    for ii=1:SampleNumberAve
-        for jj=1:SampleNumberAve
-            Rc(ii,jj)=cosCorr(abs(ii-jj)+1);
-            Rb(ii,jj)=h(1+abs(ii-jj));
+    for findex=1:plotxNumber
+        cosCorr=cos(2*pi*df(findex)/fs*(cal_BW(3)/cal_BW(kk))*(0:SampleNumberAve-1));
+        for ii=1:SampleNumberAve
+            for jj=1:SampleNumberAve
+                Rc(ii,jj)=cosCorr(abs(ii-jj)+1);
+                Rb(ii,jj)=h(1+abs(ii-jj));
+            end
+        end
+
+
+
+        for suppressionChoice=1:4
+            result(findex,kk,suppressionChoice)=trace((Rc.*Rb)*Cmatrix(:,:,suppressionChoice))/power_benchmark;   
         end
     end
-
-
-
-    for suppressionChoice=1:4
-        result(findex,kk,suppressionChoice)=trace((Rc.*Rb)*Cmatrix(:,:,suppressionChoice))/power_benchmark;   
-    end
-end
 end
 
 
 %% plot
 color=['b  ';'r  ';'g  ';'b-o';'r-o';'g-o'];
 for suppressionChoice=1:4
-for kk=1:length(oversamp)
+for kk=1:3
     
     plotx=[-fliplr(df) df(2:end)];
     ploty=10*log10(result(:,kk,suppressionChoice))';
     ploty=[fliplr(ploty) ploty(2:end)];
    
-    figure(figIndex)
+    figure(99)
     subplot(2,2,suppressionChoice)
     plot(plotx,ploty,color(kk,:),'linewidth',2);hold on
     
 end
-figure(figIndex)
-legend('CAL BW = 60MHz','CAL BW = 30MHz','CAL BW =	10MHz');
+figure(99)
+legend('CAL BW = 30MHz','CAL BW = 15MHz','CAL BW = 60MHz');
 ylim([-40,10]);  
 xlabel('Distance to Center (MHz)');
 ylabel('Suppression (dB)');
@@ -183,5 +194,3 @@ switch suppressionChoice
 end
 
 end
-
-figIndex=figIndex+1;
