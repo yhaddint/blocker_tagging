@@ -169,22 +169,26 @@ pow_index = 1;
 figure
 plot(sort(ED_results0(pow_index,:)));hold on
 plot(sort(ED_results1(pow_index,:)));
-%%
+%% Plot Detection Statistics in both hypothesis
 pow_index = 1;
 [f,xi] = ksdensity(ED_results0(pow_index,:));
 mu = mean(ED_results0(pow_index,:));
 sigma = sqrt(var(ED_results0(pow_index,:)));
 pdfxdata = linspace(mu-4*sigma,mu+4*sigma,100);
 figure
-plot(pdfxdata, normpdf(pdfxdata,mu,sigma));hold on
-% plot(xi,f)
+plot(pdfxdata, normpdf(pdfxdata,mu,sigma),'linewidth',2);hold on
+plot(xi,f,'--','linewidth',2)
 
 [f,xi] = ksdensity(ED_results1(pow_index,:));
 mu = mean(ED_results1(pow_index,:));
 sigma = sqrt(var(ED_results1(pow_index,:)));
 pdfxdata = linspace(mu-4*sigma,mu+4*sigma,100);
-plot(pdfxdata, normpdf(pdfxdata,mu,sigma));hold on
-% plot(xi,f)
+plot(pdfxdata, normpdf(pdfxdata,mu,sigma),'linewidth',2);hold on
+grid on
+xlabel('Energy Detection Statistic')
+ylabel('PDF')
+plot(xi,f,'--','linewidth',2)
+legend('H0, Theo.','H0, Sim.', 'H1, Theo.','H1, Sim.')
 %%
 % ydata = abs(fft(sig_mix1(1:Sam_Num).*CAL(1:Sam_Num,1)));
 ydata = abs(fft(sig_cache(:,1)));
