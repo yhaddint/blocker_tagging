@@ -1,3 +1,5 @@
+% Script to run quick simulation on comparing double-arm and single-arm architecture
+
 clc;clear
 runtimes = 2e3;
 sig_pow_pool = -20:1:-11;
@@ -36,6 +38,7 @@ plot(sig_pow_pool,pd_twoarm);hold on
 plot(sig_pow_pool,pd_ED)
 xlabel('noise power (dB)')
 legend('two arm','ED')
+ylabel('Detecetion Prob.')
 % plot(sort(H0_twoarm));hold on
 % plot(sort(H1_twoarm))
 %%
