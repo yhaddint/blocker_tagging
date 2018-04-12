@@ -1,3 +1,4 @@
+% Some quick simulation to verify sample scaling rule of double-arm architecture
 clear;clc;
 N = 1024;
 SNR = 6;
