@@ -1,6 +1,7 @@
 %  08/15/2016
 %  estimate interference floor and use it to set threshold for identifying
 %  dominant blockers
+% It verifies theoretical analysis on distribution of detection statistics 
 
 clear;clc;%clf;close all
 

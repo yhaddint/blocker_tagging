@@ -1,6 +1,7 @@
 %  08/15/2016
-%  estimate interference floor and use it to set threshold for identifying
-%  dominant blockers
+%  Performance analysis of three energy detection, 1) single-arm ED, 2)
+%  double arm cross-multiplication ED, 3) optimal ED using double-arm
+% Detection statistics are verified and Pd is evaluate from empical TH
 
 clear;clc;%clf;close all
 

@@ -2,6 +2,9 @@
 %  estimate interference floor and use it to set threshold for identifying
 %  dominant blockers
 
+% It seems to estimate sample from strongest blocker J4, and digitailly
+% compensate the impact in detecting other blockers.
+
 clear;clc;clf;close all
 
 

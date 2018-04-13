@@ -63,7 +63,7 @@ for onoffindex = 1:blk_num
     sig_pow1 = 10.^(sig_pow_dB/10);
     sig_pow0 = sig_pow1;
     sig_pow0(onoffindex) = 0;
-
+    
     % tagging
     
     for runindex=1:runtimes

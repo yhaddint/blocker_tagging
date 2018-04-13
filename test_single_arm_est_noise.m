@@ -2,6 +2,8 @@
 %  estimate interference floor and use it to set threshold for identifying
 %  dominant blockers
 
+% script that verify efficacy of proposed threshold selection scheme.
+
 clear;clc;%clf;close all
 
 
