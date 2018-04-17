@@ -6,93 +6,113 @@ clear;clc;
 rng(2)
 plot_PSD = 1;
 plot_rapp = 0;
+MCtimes = 1e2;
 
 % ------ system parameters ---------
-sig_length = 1e5;
-CAL_num = 2;
-CAL_pow = 0.02;
-PN1 = randi(2,5e1,1)*2-3;
-BLK_BB1 = 1*ones(sig_length,1);
-CAL_BB1 = 0.1*kron(PN1,ones(2e3,1));
-sig_BB1 = BLK_BB1 + CAL_BB1;
-sig1 = sqrt(CAL_pow*2) * cos(pi*2*(0.25/10)*(0:sig_length-1).').*sig_BB1;
+sig_length = 1e6;
+BLK_num = 2;
+CAL_pow = 0.002;
+freq = [0.2,0.25]; % Center frequency of band (GHz)
+mag_H1 = [1, 1];
+mag_H0 = [0, 1];
+fs = 10; % Conceptual Nyquist rate for simulator (GHz)
+PN_BW = 0.005; % BW of calibration signal (5MHz)
+PN_OS = fs/PN_BW; % Oversampling ratio for calibration signal
+BLK_BW = 0.0002; % BW of blocker (200KHz) 
+BLK_OS = fs/BLK_BW; % Oversampling ratio for blocker signal
 
-PN2 = randi(2,5e1,1)*2-3;
-BLK_BB2 = 1*ones(sig_length,1);
-CAL_BB2 = 0.1*kron(PN2,ones(2e3,1));
-sig_BB2 = BLK_BB2 + CAL_BB2;
-sig2 = sqrt(CAL_pow*2) * cos(pi*2*(0.2/10)*(0:sig_length-1).').*sig_BB2;
-%% plot input-output relationship of square-law device
-if plot_rapp
-    figure(100)
-    P_range = [0.75,1,2,10];
-    xin = linspace(0,3,1e3);
-    for pp=1:length(P_range)
-        xout = get_rapp_square(xin,1,P_range(pp));
-        plot(xin,xout,'linewidth',2);hold on
+%% --------- Monte Carlo Sim --------------
+for MCindex = 1:MCtimes
+    clc
+    fprintf('Iteration %d\n',MCindex);
+    for bb=1:BLK_num
+        BLK_BB(:,bb) = 0.05*kron(randi(4,sig_length/BLK_OS,1)*2-5,ones(BLK_OS,1));
+        % ---- PN sequence -------
+        PN_u(:,bb) = randi(2,sig_length/PN_OS,1)*2-3;
+        PN_l(:,bb) = randi(2,sig_length/PN_OS,1)*2-3;
+        
+        % ---- PN sequence -------
+        CAL_BB_u(:,bb) = kron(PN_u(:,bb),ones(PN_OS,1));
+        CAL_BB_l(:,bb) = kron(PN_l(:,bb),ones(PN_OS,1));
+        
+        % ---- In-band signal (baseband version) -------
+        sig_BB_H0_u(:,bb) = mag_H0(bb) * BLK_BB(:,bb) + CAL_BB_u(:,bb);
+        sig_BB_H0_l(:,bb) = mag_H0(bb) * BLK_BB(:,bb) + CAL_BB_l(:,bb);
+        sig_BB_H1_u(:,bb) = mag_H1(bb) * BLK_BB(:,bb) + CAL_BB_u(:,bb);
+        sig_BB_H1_l(:,bb) = mag_H1(bb) * BLK_BB(:,bb) + CAL_BB_l(:,bb);
+        
+        carrier(:,bb) = cos(pi*2*(freq(bb)/fs)*(0:sig_length-1).');
+        
+        % ---- RF signals ------
+        sig_H0_u(:,bb) = sqrt(CAL_pow*2) *carrier(:,bb).*sig_BB_H0_u(:,bb);
+        sig_H0_l(:,bb) = sqrt(CAL_pow*2) *carrier(:,bb).*sig_BB_H0_l(:,bb);
+        sig_H1_u(:,bb) = sqrt(CAL_pow*2) *carrier(:,bb).*sig_BB_H1_u(:,bb);
+        sig_H1_l(:,bb) = sqrt(CAL_pow*2) *carrier(:,bb).*sig_BB_H1_l(:,bb);
     end
-    plot(xin,xin.^2,'k--','linewidth',2);hold on
-    grid on
-    xlabel('Input Magnitude')
-    ylabel('Output Magnitude')
-    legend('P = 0.75','P = 1', 'P = 2', 'P = 10','Perfect Square')
-    ylim([0,1.1])
+    
+    % ----- Rapp model for square-law devices -----
+    Asat = 1;
+    P_rapp = 1;
+    sig_out_H0_u = get_rapp_square(sum(sig_H0_u,2),Asat,P_rapp);
+    sig_out_H0_l = get_rapp_square(sum(sig_H0_l,2),Asat,P_rapp);
+    sig_out_H1_u = get_rapp_square(sum(sig_H1_u,2),Asat,P_rapp);
+    sig_out_H1_l = get_rapp_square(sum(sig_H1_l,2),Asat,P_rapp);
+    
+    % ---- Anti-Aliasing LPF before aux ADC -----
+    fcutoff = 0.015; % Fcutoff is around 15MHz
+    fcutoff_DSP = fcutoff/fs*2;
+    bhi = fir1(4000,fcutoff_DSP,'low'); % Fcutoff is around 15MHz
+    temp_H0_u = filter(bhi,1,sig_out_H0_u);
+    temp_H0_l = filter(bhi,1,sig_out_H0_l);
+    temp_H1_u = filter(bhi,1,sig_out_H1_u);
+    temp_H1_l = filter(bhi,1,sig_out_H1_l);
+    sig_analogBB_H0_u = temp_H0_u(2001:end)-CAL_pow*(BLK_num);
+    sig_analogBB_H0_l = temp_H0_l(2001:end)-CAL_pow*(BLK_num);
+    sig_analogBB_H1_u = temp_H1_u(2001:end)-CAL_pow*(BLK_num);
+    sig_analogBB_H1_l = temp_H1_l(2001:end)-CAL_pow*(BLK_num);
+
+    % ------ Sampling with aux ADC (~10MHz) --------
+    DSP_in_H0_u = downsample(sig_analogBB_H0_u(1e3:end),2e3);
+    DSP_in_H0_l = downsample(sig_analogBB_H0_l(1e3:end),2e3);
+    DSP_in_H1_u = downsample(sig_analogBB_H1_u(1e3:end),2e3);
+    DSP_in_H1_l = downsample(sig_analogBB_H1_l(1e3:end),2e3);
+    
+    % Correlation & LPF
+    bhi_ED = fir1(40,0.05,'low');
+    corr_out_H0 = (DSP_in_H0_u.*PN_u(1:end-1,1)).*(DSP_in_H0_l.*PN_l(1:end-1,1));
+    corr_out_H1 = (DSP_in_H1_u.*PN_u(1:end-1,1)).*(DSP_in_H1_l.*PN_l(1:end-1,1));
+    ED_out_temp_H0 = filter(bhi_ED,1,corr_out_H0);
+    ED_out_H0(MCindex) = sum(abs(ED_out_temp_H0(21:end)).^2);
+    ED_out_temp_H1 = filter(bhi_ED,1,corr_out_H1);
+    ED_out_H1(MCindex) = sum(abs(ED_out_temp_H1(21:end)).^2);
 end
-%% Rapp model for square-law devices
-sig = sig1+sig2;
-sig_out = get_rapp_square(sig,1,1);
 
+%% Evaluation
+figure
+[b,a] = ksdensity(ED_out_H0);
+plot(a,b);hold on
+[b,a] = ksdensity(ED_out_H1);
+plot(a,b);hold on
+grid on
+xlabel('ED output');
+ylabel('PDF');
+legend('H0','H1')
+%%
 
-%% frequency domain signal plot
-if plot_PSD
-    figure
-    [ x_freq, PSD_actual ] = get_PSD( sig, 4*8192, 1e4 );
-    subplot(311)
-    plot(x_freq, PSD_actual);hold on
-    xlim([0,1e3])
-    grid on
-    xlabel('Freq (MHz)')
-    ylabel('PSD')
-    [ x_freq, PSD_actual ] = get_PSD( sig_out, 4*8192, 1e4 );
-    subplot(312)
-    plot(x_freq, PSD_actual);hold on
-    xlim([0,1e3])
-    grid on
-    xlabel('Freq (MHz)')
-    ylabel('PSD')
-
-    subplot(313)
-    plot(x_freq, PSD_actual);hold on
-    xlim([-1e1,1e1])
-    grid on
-    xlabel('Freq (MHz)')
-    ylabel('PSD')
-end
-%% Baseband signal (after anti-aliasing filter but before ADC)
-
-bhi = fir1(4000,0.003,'low');
-temp = filter(bhi,1,sig_out);
-temp_shift = temp(2001:end)-CAL_pow*CAL_num;
-xdata = linspace(0,1e5/10e9*1e6,length(temp_shift));
-figure(99)
-plot(xdata,temp_shift);grid on
-xlabel('Time (\mu s)')
-ylabel('Magnitude')
-
-%% Sampling with aux ADC (~10MHz)
-DSP_in = downsample(temp_shift(1e3:end),2e3);
-DSP_time_index = downsample(xdata(1e3:end),2e3);
-figure(98)
-subplot(211)
-plot(DSP_in);grid on
-subplot(212)
-plot(PN1)
-%% Correlation & LPF
-bhi_ED = fir1(40,0.05,'low');
-corr_out = DSP_in.*PN1(1:end-1);
-ED_out_temp = filter(bhi_ED,1,corr_out);
-ED_out = sum(abs(ED_out_temp(21:end)).^2)
-%% time domain signal plot
 % figure
-% plot(real(sig));hold on
-% plot(real(sig_out))
+% [ x_freq, PSD_actual ] = get_PSD( corr_out_H0, 498, pi );
+% subplot(211)
+% plot(x_freq, PSD_actual);hold on
+% % xlim([0,1e3])
+% grid on
+% xlabel('Freq')
+% ylabel('PSD')
+% [ x_freq, PSD_actual ] = get_PSD( corr_out_H1, 498, pi );
+% subplot(212)
+% plot(x_freq, PSD_actual);hold on
+% % xlim([0,1e3])
+% grid on
+% xlabel('Freq')
+% ylabel('PSD')
+
+
