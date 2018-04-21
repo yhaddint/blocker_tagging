@@ -5,7 +5,7 @@
 clear;clc;
 rng(2)
 plot_PSD = 1;
-plot_rapp = 0;
+plot_rapp = 1;
 
 % ------ system parameters ---------
 sig_length = 1e5;
@@ -26,12 +26,12 @@ sig2 = sqrt(CAL_pow*2) * cos(pi*2*(0.2/10)*(0:sig_length-1).').*sig_BB2;
 if plot_rapp
     figure(100)
     P_range = [0.75,1,2,10];
-    xin = linspace(0,3,1e3);
+    xin = 10.^(linspace(-20,5,1e3)/10);
     for pp=1:length(P_range)
         xout = get_rapp_square(xin,1,P_range(pp));
-        plot(xin,xout,'linewidth',2);hold on
+        loglog(xin,xout,'linewidth',2);hold on
     end
-    plot(xin,xin.^2,'k--','linewidth',2);hold on
+    loglog(xin,xin.^2,'k--','linewidth',2);hold on
     grid on
     xlabel('Input Magnitude')
     ylabel('Output Magnitude')
