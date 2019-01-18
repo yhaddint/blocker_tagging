@@ -83,9 +83,11 @@ for pp=1:length(pow_range)
             BLK_BB(:,bb) = sqrt(BLK_pow(bb))*interp1(time_orig, BLK_capture(:,bb), time_intep);
 
             % ---- PN sequence -------
-            % Interpolation of \pm1 sequences
+            % \pm1 sequences
             PN_u(:,bb) = randi(2,sig_length/PN_OS,1)*2-3;
             PN_l(:,bb) = randi(2,sig_length/PN_OS,1)*2-3;
+            
+            % Interpolation to requres PN BW
             CAL_BB_u(:,bb) = kron(PN_u(:,bb),ones(PN_OS,1));
             CAL_BB_l(:,bb) = kron(PN_l(:,bb),ones(PN_OS,1));
 
