@@ -1,6 +1,6 @@
 clear;clc
 load('PN_Code_Baker.mat'); % Load true code (no oversampling version)
-filename = [1,1];
+filename = [1,1];          % Name of xxdata2.csv, e.g., [1,1] for 11data2.csv
 filecode = bi2de(filename,'left-msb');
 switch filecode
     case 1
