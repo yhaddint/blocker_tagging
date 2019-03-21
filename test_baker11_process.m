@@ -1,10 +1,10 @@
 clear;clc
-M = addpath('C:\Users\Han\Google Drive\Blocker Tagging\Jan 22nd');   % read data
+M = addpath('C:\Users\Han\Google Drive\Blocker Tagging\March 19th');   % read data
 load('data1.mat');
 %%
-fc = 510;
-fcutoff = 0.01;                   % Fcutoff (0.9 is heristic value)
-AA_taps_DS = 2000;                % Num of Tap (just for RF sim purpose)
+fc = 1010;
+fcutoff = 0.001;                   % Fcutoff (0.9 is heristic value)
+AA_taps_DS = 4000;                % Num of Tap (just for RF sim purpose)
 bhi_AA_DS = fir1(AA_taps_DS,fcutoff,'low'); % Call function for filter design
 
 Ts = XDelta;
@@ -12,16 +12,19 @@ watch_win = 100e-6;
 watch_size = floor(watch_win/Ts);
 t = (0:watch_size-1).' * Ts;
 Ts = XDelta;
-carrier_OS = cos(2*pi*(fc + -0.45e-3 )*1e6*t(1:watch_size));
+carrier_OS = cos(2*pi*(fc + -0.35e-3 )*1e6*t(1:watch_size));
 
 sig_analog_DS = filter(bhi_AA_DS,1,(Y(1:watch_size).*carrier_OS));
 sig_analog_DS_shift = sig_analog_DS(AA_taps_DS/2+1 : end);
 
 %%
-t_sel = 1e4:round(0.5e-6/Ts):length(sig_analog_DS_shift);
+t_sel = 1e4:round(2e-6/Ts):length(sig_analog_DS_shift);
 figure
-plot(t(1:length(sig_analog_DS_shift)), real(sig_analog_DS_shift));hold on
-plot(t(t_sel), real(sig_analog_DS_shift(t_sel)),'o','linewidth',2)
+plot(t(1:length(sig_analog_DS_shift))/1e-6, real(sig_analog_DS_shift));hold on
+plot(t(t_sel)/1e-6, real(sig_analog_DS_shift(t_sel)),'o','linewidth',2)
+xlabel('Time [us]')
+title('PN sequence from data1.mat')
+% xlim([0,20])
 grid on
 %%
 PN_code = zeros(length(real(sig_analog_DS_shift(t_sel))),1);
@@ -33,14 +36,14 @@ load('PN_Code_Baker.mat');
 figure;plot(abs(cconv(Code(:,1),flipud(PN_code))));grid on
 
 %%
-if fc==210
+if fc==910
     start_idx = 1;
     sum(PN_code.*Code(start_idx:start_idx+length(PN_code)-1,1))
-    figure;plot(abs(conv(Code(start_idx:start_idx+200-1,1),flipud(PN_code))));grid on
-elseif fc==510
-    start_idx = 201;
+    figure;plot(abs(conv(Code(start_idx:start_idx+50-1,1),flipud(PN_code))));grid on
+elseif fc==1010
+    start_idx = 51;
     sum(PN_code.*Code(start_idx:start_idx+length(PN_code)-1,1))
-    figure;plot(abs(conv(Code(start_idx:start_idx+200-1,1),flipud(PN_code))));grid on
+    figure;plot(abs(conv(Code(start_idx:start_idx+50-1,1),flipud(PN_code))));grid on
 end
 %%
 % fft_size = 8192;                    % FFT size 
