@@ -1,8 +1,8 @@
 clear;clc
-M = addpath('C:\Users\Han\Google Drive\Blocker Tagging\March 19th');   % read data
+M = addpath('C:\Users\Han\Google Drive\Blocker Tagging\March 27th');   % read data
 load('data1.mat');
 %%
-fc = 1010;
+fc = 900.1;
 fcutoff = 0.001;                   % Fcutoff (0.9 is heristic value)
 AA_taps_DS = 4000;                % Num of Tap (just for RF sim purpose)
 bhi_AA_DS = fir1(AA_taps_DS,fcutoff,'low'); % Call function for filter design
@@ -18,7 +18,7 @@ sig_analog_DS = filter(bhi_AA_DS,1,(Y(1:watch_size).*carrier_OS));
 sig_analog_DS_shift = sig_analog_DS(AA_taps_DS/2+1 : end);
 
 %%
-t_sel = 1e4:round(2e-6/Ts):length(sig_analog_DS_shift);
+t_sel = 1e4:round(1e-6/Ts):length(sig_analog_DS_shift);
 figure
 plot(t(1:length(sig_analog_DS_shift))/1e-6, real(sig_analog_DS_shift));hold on
 plot(t(t_sel)/1e-6, real(sig_analog_DS_shift(t_sel)),'o','linewidth',2)
@@ -36,14 +36,14 @@ load('PN_Code_Baker.mat');
 figure;plot(abs(cconv(Code(:,1),flipud(PN_code))));grid on
 
 %%
-if fc==910
+if fc==900.1
     start_idx = 1;
     sum(PN_code.*Code(start_idx:start_idx+length(PN_code)-1,1))
-    figure;plot(abs(conv(Code(start_idx:start_idx+50-1,1),flipud(PN_code))));grid on
-elseif fc==1010
-    start_idx = 51;
+    figure;plot(abs(conv(Code(start_idx:start_idx+100-1,1),flipud(PN_code))));grid on
+elseif fc==1000.1
+    start_idx = 101;
     sum(PN_code.*Code(start_idx:start_idx+length(PN_code)-1,1))
-    figure;plot(abs(conv(Code(start_idx:start_idx+50-1,1),flipud(PN_code))));grid on
+    figure;plot(abs(conv(Code(start_idx:start_idx+100-1,1),flipud(PN_code))));grid on
 end
 %%
 % fft_size = 8192;                    % FFT size 
