@@ -1,0 +1,130 @@
+\relax 
+\citation{788210}
+\citation{Hattab:2014bu,Axell:2012gs}
+\citation{Yu:hm}
+\citation{Razavi:2010jf}
+\citation{Ghaffari:2013fn}
+\citation{rebeiz2015spectrum,Zou:cj,Grimm:2014bt}
+\citation{gardner1988statistical}
+\citation{6928507}
+\citation{4472240}
+\citation{6502272,5678599}
+\citation{6637036}
+\@writefile{toc}{\contentsline {section}{\numberline {I}Introduction}{1}}
+\newlabel{sec:Introduction}{{I}{1}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\unhbox \voidb@x \hbox {I-A}}Motivations}{1}}
+\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces Illustration of multi-band interferers received by a typical spectrum sensing receiver.}}{1}}
+\newlabel{fig:multiband_interferers}{{1}{1}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\unhbox \voidb@x \hbox {I-B}}Related Works}{1}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\unhbox \voidb@x \hbox {I-C}}Contributions}{1}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\unhbox \voidb@x \hbox {I-D}}Paper Outline}{2}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\unhbox \voidb@x \hbox {I-E}}Notation}{2}}
+\@writefile{toc}{\contentsline {section}{\numberline {II}System Model}{2}}
+\newlabel{sec:Model}{{II}{2}}
+\newlabel{eq:interferers_model}{{1}{2}}
+\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces A spectrum sensing system capable to smartly steer reconfigurable notch filters for dominant interferers. Interferers identification module is detailed in the dashed box. Selected spectrum in its signal path are illustrated on the bottom of figure.}}{2}}
+\newlabel{fig:system_schematic}{{2}{2}}
+\@writefile{toc}{\contentsline {section}{\numberline {III}Interferers identification system}{2}}
+\newlabel{sec:aigorithm}{{III}{2}}
+\newlabel{eq:y_tilde_tilde}{{4}{3}}
+\newlabel{eq:y_of_n}{{5}{3}}
+\@writefile{loa}{\contentsline {algorithm}{\numberline {1}{\ignorespaces Identification Algorithm}}{3}}
+\newlabel{eq:mitigate_cc_intermodulation}{{6}{3}}
+\newlabel{eq:digital_correlator}{{7}{3}}
+\newlabel{eq:digital_LPF}{{8}{3}}
+\newlabel{eq:digital_power_estimator}{{9}{3}}
+\@writefile{toc}{\contentsline {section}{\numberline {IV}Analysis of Identification Performance}{3}}
+\newlabel{sec:Theoretical}{{IV}{3}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\unhbox \voidb@x \hbox {IV-A}}Interference analysis}{3}}
+\newlabel{eq:y_i_components}{{10}{4}}
+\newlabel{eq:s_hat}{{16}{4}}
+\newlabel{eq:power_s}{{17}{4}}
+\newlabel{eq:power_n_int}{{18}{4}}
+\newlabel{eq:power_n_int}{{19}{5}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\unhbox \voidb@x \hbox {IV-B}}Accuracy of Power Estimator}{5}}
+\newlabel{sec:problem_formulation}{{\unhbox \voidb@x \hbox {IV-B}}{5}}
+\newlabel{proposition:estimation_formulation}{{1}{5}}
+\newlabel{eq:mean_of_estimator}{{20}{5}}
+\newlabel{eq:var_of_estimator}{{21}{5}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\unhbox \voidb@x \hbox {IV-C}}Analysis of Identification Probability}{5}}
+\newlabel{eq:threshold_calculation}{{23}{5}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\unhbox \voidb@x \hbox {IV-D}}Comparison with other methods}{6}}
+\@writefile{toc}{\contentsline {section}{\numberline {V}Implementation Issues}{6}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\unhbox \voidb@x \hbox {V-A}}Thresholding via noise power estimation}{6}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\unhbox \voidb@x \hbox {V-B}}Synchronization}{6}}
+\@writefile{loa}{\contentsline {algorithm}{\numberline {2}{\ignorespaces Thresholdind based on Noise Power Estimation}}{7}}
+\newlabel{eq:crosstalk_mitigation}{{29}{7}}
+\@writefile{loa}{\contentsline {algorithm}{\numberline {3}{\ignorespaces Crosstalk Aware Identification Algorithm}}{7}}
+\newlabel{eq:crosstalk_mitigation}{{30}{7}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\unhbox \voidb@x \hbox {V-C}}Digitally enhanced interferers identification}{7}}
+\newlabel{sec:enhanced_algorithm}{{\unhbox \voidb@x \hbox {V-C}}{7}}
+\@writefile{lot}{\contentsline {table}{\numberline {I}{\ignorespaces Simulation Parameters}}{8}}
+\newlabel{tab:table1}{{I}{8}}
+\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces Required number of samples to get targeted identification performance with different options of calibration signal power.}}{8}}
+\newlabel{fig:sim_vs_theo}{{3}{8}}
+\@writefile{toc}{\contentsline {section}{\numberline {VI}Numerical Results and Discussion}{8}}
+\newlabel{sec:Results}{{VI}{8}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\unhbox \voidb@x \hbox {VI-A}}Verification of Identification Performance Analysis}{8}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\unhbox \voidb@x \hbox {VI-B}}Identification Performance under model mismatch}{8}}
+\@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces xxx}}{9}}
+\newlabel{fig:sim_vs_theo4}{{4}{9}}
+\@writefile{lof}{\contentsline {figure}{\numberline {5}{\ignorespaces Probability of identifying the $F$ strongest interferers with different number of samples. Note that STSA needs at least 256 samples to make identification while this works needs only 32.}}{9}}
+\newlabel{fig:sim_vs_theo3}{{5}{9}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\unhbox \voidb@x \hbox {VI-C}}Comparison with STSA}{9}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\unhbox \voidb@x \hbox {VI-D}}Comparison with CS}{9}}
+\@writefile{lof}{\contentsline {figure}{\numberline {6}{\ignorespaces Average residual power of interferers after $F$ notch filters suppress identified interferers. Note that STSA needs at least 256 samples to make identification while this works needs only 32.}}{10}}
+\newlabel{fig:sim_vs_theo2}{{6}{10}}
+\@writefile{lof}{\contentsline {figure}{\numberline {7}{\ignorespaces xxx}}{10}}
+\newlabel{fig:sim_vs_theo1}{{7}{10}}
+\@writefile{toc}{\contentsline {section}{\numberline {VII}System Performance Comparison}{10}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\unhbox \voidb@x \hbox {VII-A}}RF front-end}{10}}
+\citation{5678599}
+\citation{5936264}
+\citation{5678599}
+\citation{6471261}
+\citation{5453308}
+\citation{5678599}
+\citation{6331565}
+\citation{Ren2015}
+\@writefile{lof}{\contentsline {figure}{\numberline {8}{\ignorespaces The front-end architecture of (a) The STSA system, (b) the CS-MWC system}}{11}}
+\newlabel{fig:other_systems}{{8}{11}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\unhbox \voidb@x \hbox {VII-B}}DSP back-end}{11}}
+\citation{Ren2015}
+\bibstyle{IEEEtran}
+\bibdata{IEEEabrv,references}
+\bibcite{788210}{1}
+\bibcite{Hattab:2014bu}{2}
+\bibcite{Axell:2012gs}{3}
+\bibcite{Yu:hm}{4}
+\bibcite{Razavi:2010jf}{5}
+\bibcite{Ghaffari:2013fn}{6}
+\bibcite{rebeiz2015spectrum}{7}
+\bibcite{Zou:cj}{8}
+\bibcite{Grimm:2014bt}{9}
+\bibcite{gardner1988statistical}{10}
+\bibcite{6928507}{11}
+\bibcite{4472240}{12}
+\bibcite{6502272}{13}
+\bibcite{5678599}{14}
+\bibcite{6637036}{15}
+\@writefile{toc}{\contentsline {section}{\numberline {VIII}Conclusion}{12}}
+\newlabel{sec:Conclusion}{{VIII}{12}}
+\@writefile{toc}{\contentsline {section}{Appendix}{12}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {A}Output signals of Square-Law Device}{12}}
+\newlabel{sec:components_in_y}{{A}{12}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {B}Proof of Proposition 1\hbox {}}{12}}
+\newlabel{sec:proof_estimation_formulation_rc}{{B}{12}}
+\@writefile{toc}{\contentsline {section}{References}{12}}
+\@writefile{lot}{\contentsline {table}{\numberline {II}{\ignorespaces Interferers Identification Parameters}}{13}}
+\newlabel{tab:system_comparison_parameters}{{II}{13}}
+\@writefile{lot}{\contentsline {table}{\numberline {III}{\ignorespaces Summary of assigned values for circuits model}}{13}}
+\newlabel{tab:circuit_components}{{III}{13}}
+\@writefile{lot}{\contentsline {table}{\numberline {IV}{\ignorespaces Summary of system performance}}{13}}
+\newlabel{tab:circuit_components}{{IV}{13}}
+\@writefile{lot}{\contentsline {table}{\numberline {V}{\ignorespaces Signal Components Generated by Square-Law Device}}{13}}
+\newlabel{tab:components_in_y}{{V}{13}}
+\bibcite{5936264}{16}
+\bibcite{6471261}{17}
+\bibcite{5453308}{18}
+\bibcite{6331565}{19}
+\bibcite{Ren2015}{20}
